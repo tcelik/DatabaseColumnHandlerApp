@@ -2,108 +2,83 @@ package com.hugin.columnhandlerapp.dao;
 
 import com.hugin.columnhandlerapp.entity.FieldValue;
 import com.hugin.columnhandlerapp.entity.RowFieldValues;
-
+import com.hugin.columnhandlerapp.exception.DaoException;
+import com.hugin.columnhandlerapp.global.Global;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.logging.Logger;
 
 public enum DBClientDao {
     INSTANCE;
 
-    //Properties config.
-    private static final String URL = "jdbc:mysql://localhost:3306/testdb";
-    private static final String USER = "root";
-    private static final String PASSWORD = "csd19933";
+    private final static Logger log = Logger.getLogger(DBClientDao.class.getName());
 
-    //testing Driver
-    public void testDriver() throws ClassNotFoundException
+
+    private void testDriver() throws DaoException
     {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
         }
-        catch (ClassNotFoundException e) {
-            System.out.println("Driver düzgün yüklenemedi");
-            throw e; //yukarıya fırlat.
+        catch (Throwable ex) {
+            log.info("Driver-not-suitable");
+            throw new DaoException("testDriver", ex);
         }
     }
 
-    //dummy data test
-    public boolean insert() throws SQLException
+    private Optional<List<RowFieldValues>> getRowFieldValueListFromResultSet(ResultSet rs) throws DaoException
     {
-        var sqlCmd = "insert into terminalList (TerminalId, MerchantCode, FiscalId, DefaultBank) values (?, ?, ?, ?)";
 
-        try (var con = DriverManager.getConnection(URL, USER, PASSWORD);
-             var stmt = con.prepareStatement(sqlCmd)) {
+        List<RowFieldValues> rowFieldValuesResultList = new ArrayList<>();
 
-            stmt.setInt(1, 0);
-            stmt.setString(2, "Merchant10");
-            stmt.setString(3, "Id0");
-            stmt.setString(4, "Akbank");
+        try {
+            ResultSetMetaData rsmd = rs.getMetaData();
 
-            return stmt.executeUpdate() > 0;
+            if (!rs.next()) {
+                log.info("there is no row");
+            }
+            else {
+                log.info("Operation is starting...");
+                RowFieldValues rfvlist; // FieldValue wrapper
+
+                do {
+                    rfvlist = new RowFieldValues(); //clear
+
+                    //column-base iteration for each rs
+                    for (int i = 1; i <= rsmd.getColumnCount(); i++) {
+                        String colName = rsmd.getColumnName(i);
+                        rfvlist.add(new FieldValue(colName, rs.getString(colName)));
+                    }
+
+                    //save each rowfieldvalues
+                    rowFieldValuesResultList.add(rfvlist);
+
+                } while (rs.next());
+                log.info("Operation is ending...All rows scanned");
+            }
+
+            return rowFieldValuesResultList.isEmpty() ? Optional.empty() : Optional.of(rowFieldValuesResultList);
         }
         catch (Throwable ex) {
-            throw ex;
+            throw new DaoException("getRowFieldValueListFromResultSet", ex);
         }
     }
 
-    public List<RowFieldValues> fillValues (String strSelect) throws SQLException
+    public Optional<List<RowFieldValues>> fillValues (String sqlCmd) throws DaoException
     {
-        //result list
-        List<RowFieldValues> result = new ArrayList<>();
 
-        //RowFiledValues list
-        RowFieldValues rfvl = new RowFieldValues();
 
-        //Colon names for dynamic table.
-        List<String> colNamesList = new ArrayList<>();
-
-        //Connection & operation
-        try (var con = DriverManager.getConnection(URL, USER, PASSWORD);
+        try (var con = DriverManager.getConnection(Global.URL, Global.USER, Global.PASSWORD);
              var stmt = con.createStatement()) {
 
-            //get the result
-            ResultSet rs = stmt.executeQuery(strSelect);
+            testDriver();
 
-            //metadata
-            ResultSetMetaData rsmd = rs.getMetaData();
-            int columnsNumber = rsmd.getColumnCount(); //how many column
+            return getRowFieldValueListFromResultSet(stmt.executeQuery(sqlCmd));
 
-            //get the col name from metadata info and add the list
-            for (int j = 1; j <= columnsNumber; j++) {
-                String colName = rsmd.getColumnName(j);
-                colNamesList.add(colName);
-            }
-
-            //each rs
-            while (rs.next()) {
-
-                rfvl.getFieldValues().clear();
-
-                //get the col name from metadata info and add the list
-                for (int j = 1; j <= columnsNumber; j++) {
-                    String colName = rsmd.getColumnName(j);
-                    rfvl.add(new FieldValue(colName, rs.getString(colName)));
-                }
-
-                //each rfvl add the array list
-                result.add(rfvl);
-            }
-
-            System.out.println("Hiç bir satır bulunamadı");
-
-            //return result
-            return result;
-
+        } catch (Throwable ex) {
+            log.info("fillValues-exception");
+            throw new DaoException("fillValues-exception", ex);
         }
-        catch (Exception ex) {
-            throw ex;
-        }
-
     }
 }

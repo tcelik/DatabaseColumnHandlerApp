@@ -29,4 +29,15 @@ public class RowFieldValues {
         m_fieldValues = fieldValues;
     }
 
+    @Override
+    public String toString()
+    {
+        String result = "";
+
+        for (FieldValue fv : m_fieldValues) {
+            result += fv.getColumnValue() + " ";
+        }
+
+        return result;
+    }
 }

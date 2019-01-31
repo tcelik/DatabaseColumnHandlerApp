@@ -34,8 +34,8 @@ public class FieldValue {
     public String toString()
     {
         return "FieldValue{" +
-                "columnName='" + m_columnName + '\'' +
-                ", columnValue='" + m_columnValue + '\'' +
+                "m_columnName='" + m_columnName +
+                ", m_columnValue='" + m_columnValue + '\'' +
                 '}';
     }
 }

@@ -1,43 +1,39 @@
 package com.hugin.columnhandlerapp.application;
 
+import com.google.protobuf.ServiceException;
 import com.hugin.columnhandlerapp.application.controller.DatabaseController;
+import com.hugin.columnhandlerapp.application.view.MenuView;
+import com.hugin.columnhandlerapp.application.view.ShowResultView;
 import com.hugin.columnhandlerapp.dao.DBClientDao;
 import com.hugin.columnhandlerapp.entity.FieldValue;
 import com.hugin.columnhandlerapp.entity.RowFieldValues;
 
 import java.util.List;
+import java.util.Optional;
 
 public class App {
     public static void main(String[] args)
     {
+        //User defined sql cmd menu.
+        MenuView menuView = new MenuView();
+        String sqlCmd = menuView.view();
+
+        //Operation
         try {
-            DBClientDao.INSTANCE.testDriver();
-            System.out.println("Driver testi geçti");
-
-            String dynamicTable = "terminalbanks";
-            String strSelectFmt = "select AppVersion, terminalList.TerminalId, DefaultBank from %s" + " " +
-                    "inner join terminalList on terminalbanks.Terminalid = terminalList.Terminalid";
-            String strSelect = String.format(strSelectFmt, dynamicTable);
-
-            //Get the result and for each
             DatabaseController controller = new DatabaseController();
-            List<RowFieldValues> rowFieldValuesList = controller.fillValues(strSelect);
+            Optional<List<RowFieldValues>> rowFieldValuesListOpt = controller.fillValues(sqlCmd);
 
-            //show the result if you want.
-            int index = 0;
-            for (RowFieldValues rfvl : rowFieldValuesList) {
-                System.out.println(index++ + "-satır");
-                for (FieldValue fv : rfvl.getFieldValues()) {
-                    System.out.println(fv.toString());
-                }
+            if(!rowFieldValuesListOpt.get().isEmpty()) {
+                ShowResultView resultview = new ShowResultView(rowFieldValuesListOpt.get());
+                resultview.view();
             }
-         }
-        catch (ClassNotFoundException e) {
-            System.out.println("Driver düzgün yüklenemedi...");
-            System.exit(1);
+            else {
+                System.out.println("Optional.empty");
+            }
         }
-        catch (Throwable e) {
-            e.printStackTrace();
+        catch (ServiceException e) {
+            System.out.println(e.getMessage());
+            System.exit(1);
         }
     }
 }
