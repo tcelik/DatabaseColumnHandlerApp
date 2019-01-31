@@ -41,9 +41,11 @@ public enum DBClientDao {
                 Global.USER = userName;
                 Global.PASSWORD = password;
             }
+            else
+                System.out.println("There is no such that file");
         }
         catch (Throwable ex) {
-            throw  new DaoException("config-file", ex);
+            throw  new DaoException("getInfoFromDatabaseConfig", ex);
         }
     }
 
@@ -101,16 +103,12 @@ public enum DBClientDao {
 
     public Optional<List<RowFieldValues>> fillValues (String sqlCmd) throws DaoException
     {
-        //override the config if there.
-        try {
-            getInfoFromDatabaseConfig();
-        }
-        catch (Throwable ex) {
-            throw new DaoException("file-not-found", ex);
-        }
+        //get info from json config
+        getInfoFromDatabaseConfig();
 
         try (var con = DriverManager.getConnection(Global.URL, Global.USER, Global.PASSWORD);
              var stmt = con.createStatement()) {
+
 
             testDriver();
 
