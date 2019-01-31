@@ -4,9 +4,9 @@ import java.util.ArrayList;
 
 public class Global {
     //Properties config.
-    public static final String URL = "jdbc:mysql://localhost:3306/testdb";
-    public static final String USER = "root";
-    public static final String PASSWORD = "csd19933";
+    public static String URL = "jdbc:mysql://localhost:3306/testdb";
+    public static String USER = "root";
+    public static String PASSWORD = "csd19933";
 
 
     //GLOBAL SQLCMD LİST
@@ -22,4 +22,5 @@ public class Global {
         SQLCMD_LIST.add(SQLCMD3);
         SQLCMD_LIST.add(SQLCMD4);
     }
+
 }
